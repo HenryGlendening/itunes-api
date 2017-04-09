@@ -75,6 +75,22 @@ function playPlaylist(nameOrId){
   return true;
 }
 
+function shufflePlaylist(nameOrId){
+  itunes = Application('iTunes');
+
+  if ((nameOrId - 0) == nameOrId && ('' + nameOrId).trim().length > 0) {
+    id = parseInt(nameOrId);
+    itunes.playlists.byId(id).play();
+  }else{
+    itunes.playlists.byName(nameOrId).play();
+  }
+
+  itunes.shuffleEnabled = true
+  itunes.shuffleMode = "songs"
+
+  return true;
+}
+
 function setVolume(level){
   itunes = Application('iTunes');
 
@@ -292,7 +308,25 @@ app.put('/playlists/:id/play', function (req, res) {
       res.sendStatus(404)
     }
   })
+})
 
+app.put('/playlists/:id/shuffle', function (req, res) {
+  osa(getPlaylistsFromItunes, function (error, data) {
+    if (error){
+      res.sendStatus(500)
+    }else{
+      for (var i = 0; i < data.length; i++) {
+        playlist = data[i]
+        if (req.params.id == parameterize(playlist['name'])) {
+          osa(shufflePlaylist, playlist['id'], function (error, data) {
+            sendResponse(error, res)
+          })
+          return
+        }
+      }
+      res.sendStatus(404)
+    }
+  })
 })
 
 app.get('/airplay_devices', function(req, res){
