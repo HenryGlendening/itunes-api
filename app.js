@@ -392,8 +392,49 @@ app.put('/airplay_devices/:id/volume', function (req, res) {
     }
   });
 });
+
+app.get('/artists', function(req, res) {
+  metadata.getArtists(function(error, data) {
+    if (error) {
+      console.log(error);
+      res.sendStatus(500);
+    } else {
+      res.json({'artists': data});
     }
-  })
-})
+  });
+});
+
+app.put('/artists/update', function(req, res) {
+  metadata.updateArtists(function(error, data) {
+    if (error) {
+      console.log(error);
+      res.sendStatus(500);
+    } else {
+      res.json(data);
+    }
+  });
+});
+
+app.get('/genres', function(req, res){
+  metadata.getGenres(function(error, data) {
+    if (error) {
+      console.log(error);
+      res.sendStatus(500);
+    } else {
+      res.json({'genres': data});
+    }
+  });
+});
+
+app.put('/genres/update', function(req, res) {
+  metadata.updateGenres(function(error, data) {
+    if (error) {
+      console.log(error);
+      res.sendStatus(500);
+    } else {
+      res.json(data);
+    }
+  });
+});
 
 app.listen(process.env.PORT || 8181);
