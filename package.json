@@ -15,10 +15,11 @@
     "url": "https://github.com/maddox/itunes-api/issues"
   },
   "dependencies": {
-    "express": "^4.12.4",
-    "morgan": "^1.6.1",
     "body-parser": "^1.12.4",
+    "express": "^4.12.4",
+    "file-system": "^2.2.2",
     "local-itunes": "^0.3.0",
+    "morgan": "^1.6.1",
     "osa": "2.2.0",
     "osascript": "1.2.0",
     "parameterize": "^0.0.7"
