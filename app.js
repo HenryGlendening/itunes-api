@@ -1,15 +1,14 @@
-var fs = require('fs');
-var path = require('path');
-var util = require('util');
-var express = require('express');
-var morgan = require('morgan');
-var bodyParser = require('body-parser');
-var iTunes = require('local-itunes');
-var osa = require('osa');
-var osascript = require('osascript');
-var airplay = require('./lib/airplay');
-var metadata = require('./lib/metadata');
-var parameterize = require('parameterize');
+const path = require('path');
+const util = require('util');
+const express = require('express');
+const morgan = require('morgan');
+const bodyParser = require('body-parser');
+const iTunes = require('local-itunes');
+const osa = require('osa');
+const osascript = require('osascript');
+const airplay = require('./lib/airplay');
+const metadata = require('./lib/metadata');
+const parameterize = require('parameterize');
 
 var app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -88,6 +87,15 @@ function shufflePlaylist(nameOrId) {
 
   itunes.shuffleEnabled = true;
   itunes.shuffleMode = 'songs';
+
+  return true;
+}
+
+function playGenre(name, callback) {
+  const options = { args: [genre] };
+  osascript.file(path.join(__dirname, 'lib/playGenre.applescript'), options, function (err, data) {
+    callback(err, data);
+  });
 
   return true;
 }
@@ -180,52 +188,60 @@ function getPlaylists(callback) {
   });
 }
 
-app.get('/_ping', function(req, res) {
+function refreshNowPlayingPlaylist(callback) {
+  osascript.file(path.join(__dirname, 'lib/refreshNowPlayingPlaylist.applescript'), function (err, data) {
+    callback(err, data);
+  });
+
+  return true;
+}
+
+app.get('/_ping', function (req, res) {
   res.send('OK');
 });
 
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
   res.sendfile('index.html');
 });
 
-app.put('/play', function(req, res) {
+app.put('/play', function (req, res) {
   iTunes.play(function (error) {
     sendResponse(error, res);
   });
 });
 
-app.put('/pause', function(req, res) {
+app.put('/pause', function (req, res) {
   iTunes.pause(function (error) {
     sendResponse(error, res);
   });
 });
 
-app.put('/playpause', function(req, res) {
+app.put('/playpause', function (req, res) {
   iTunes.playpause(function (error) {
     sendResponse(error, res);
   });
 });
 
-app.put('/stop', function(req, res) {
+app.put('/stop', function (req, res) {
   iTunes.stop(function (error) {
     sendResponse(error, res);
   });
 });
 
-app.put('/previous', function(req, res) {
+app.put('/previous', function (req, res) {
   iTunes.previous(function (error) {
     sendResponse(error, res);
   });
 });
 
-app.put('/next', function(req, res) {
+app.put('/next', function (req, res) {
   iTunes.next(function (error) {
     sendResponse(error, res);
   });
 });
 
-app.put('/volume', function(req, res) {
-  osa(setVolume, req.body.level, function(error, data, log) {
+app.put('/volume', function (req, res) {
+  osa(setVolume, req.body.level, function (error, data, log) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -235,8 +251,8 @@ app.put('/volume', function(req, res) {
   });
 });
 
-app.put('/mute', function(req, res) {
-  osa(setMuted, req.body.muted, function(error, data, log) {
+app.put('/mute', function (req, res) {
+  osa(setMuted, req.body.muted, function (error, data, log) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -246,8 +262,8 @@ app.put('/mute', function(req, res) {
   });
 });
 
-app.put('/shuffle', function(req, res) {
-  osa(setShuffle, req.body.mode, function(error, data, log) {
+app.put('/shuffle', function (req, res) {
+  osa(setShuffle, req.body.mode, function (error, data, log) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -257,8 +273,8 @@ app.put('/shuffle', function(req, res) {
   });
 });
 
-app.put('/repeat', function(req, res) {
-  osa(setRepeat, req.body.mode, function(error, data, log) {
+app.put('/repeat', function (req, res) {
+  osa(setRepeat, req.body.mode, function (error, data, log) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -268,12 +284,12 @@ app.put('/repeat', function(req, res) {
   });
 });
 
-app.get('/now_playing', function(req, res) {
+app.get('/now_playing', function (req, res) {
   error = null;
   sendResponse(error, res);
 });
 
-app.get('/artwork', function(req, res) {
+app.get('/artwork', function (req, res) {
   osascript.file(path.join(__dirname, 'lib', 'art.applescript'), function (error, data) {
     res.type('image/jpeg');
     res.sendFile('/tmp/currently-playing.jpg');
@@ -286,7 +302,7 @@ app.get('/playlists', function (req, res) {
       console.log(error);
       res.sendStatus(500);
     } else {
-      res.json({playlists: data});
+      res.json({ playlists: data });
     }
   });
 });
@@ -332,18 +348,18 @@ app.put('/playlists/:id/shuffle', function (req, res) {
   });
 });
 
-app.get('/airplay_devices', function(req, res) {
-  osa(airplay.listAirPlayDevices, function(error, data, log) {
+app.get('/airplay_devices', function (req, res) {
+  osa(airplay.listAirPlayDevices, function (error, data, log) {
     if (error) {
       res.sendStatus(500);
     } else {
-      res.json({'airplay_devices': data});
+      res.json({ 'airplay_devices': data });
     }
   });
 });
 
-app.get('/airplay_devices/:id', function(req, res) {
-  osa(airplay.listAirPlayDevices, function(error, data, log) {
+app.get('/airplay_devices/:id', function (req, res) {
+  osa(airplay.listAirPlayDevices, function (error, data, log) {
     if (error) {
       res.sendStatus(500);
     } else {
@@ -361,7 +377,7 @@ app.get('/airplay_devices/:id', function(req, res) {
 });
 
 app.put('/airplay_devices/:id/on', function (req, res) {
-  osa(airplay.setSelectionStateAirPlayDevice, req.params.id, true, function(error, data, log) {
+  osa(airplay.setSelectionStateAirPlayDevice, req.params.id, true, function (error, data, log) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -372,7 +388,7 @@ app.put('/airplay_devices/:id/on', function (req, res) {
 });
 
 app.put('/airplay_devices/:id/off', function (req, res) {
-  osa(airplay.setSelectionStateAirPlayDevice, req.params.id, false, function(error, data, log) {
+  osa(airplay.setSelectionStateAirPlayDevice, req.params.id, false, function (error, data, log) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -383,7 +399,7 @@ app.put('/airplay_devices/:id/off', function (req, res) {
 });
 
 app.put('/airplay_devices/:id/volume', function (req, res) {
-  osa(airplay.setVolumeAirPlayDevice, req.params.id, req.body.level, function(error, data, log) {
+  osa(airplay.setVolumeAirPlayDevice, req.params.id, req.body.level, function (error, data, log) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -393,19 +409,19 @@ app.put('/airplay_devices/:id/volume', function (req, res) {
   });
 });
 
-app.get('/artists', function(req, res) {
-  metadata.getArtists(function(error, data) {
+app.get('/artists', function (req, res) {
+  metadata.getArtists(function (error, data) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
     } else {
-      res.json({'artists': data});
+      res.json({ 'artists': data });
     }
   });
 });
 
-app.put('/artists/update', function(req, res) {
-  metadata.updateArtists(function(error, data) {
+app.put('/artists/update', function (req, res) {
+  metadata.updateArtists(function (error, data) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -415,19 +431,46 @@ app.put('/artists/update', function(req, res) {
   });
 });
 
-app.get('/genres', function(req, res){
-  metadata.getGenres(function(error, data) {
+app.put('/artists/:name/play', function (req, res) {
+  metadata.getArtists(function (error, data) {
     if (error) {
-      console.log(error);
       res.sendStatus(500);
     } else {
-      res.json({'genres': data});
+      for (var i = 0; i < data.length; i++) {
+        genre = data[i];
+        if (req.params.name == genre) {
+          refreshNowPlayingPlaylist(function (error, data) {
+            if (error) {
+              console.log(error);
+              res.sendStatus(500);
+            } else {
+              playGenre(genre, function (error, data) {
+                sendResponse(error, res);
+              });
+            }
+          });
+
+          return;
+        }
+      }
+      res.sendStatus(404);
     }
   });
 });
 
-app.put('/genres/update', function(req, res) {
-  metadata.updateGenres(function(error, data) {
+app.get('/genres', function (req, res) {
+  metadata.getGenres(function (error, data) {
+    if (error) {
+      console.log(error);
+      res.sendStatus(500);
+    } else {
+      res.json({ 'genres': data });
+    }
+  });
+});
+
+app.put('/genres/update', function (req, res) {
+  metadata.updateGenres(function (error, data) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -435,6 +478,22 @@ app.put('/genres/update', function(req, res) {
       res.json(data);
     }
   });
+});
+
+app.put('/genres/:name/play', function (req, res) {
+  genre = req.params.name
+  refreshNowPlayingPlaylist(function (error, data) {
+    if (error) {
+      console.log(error);
+      res.sendStatus(500);
+    } else {
+      playGenre(genre, function (error, data) {
+        sendResponse(error, res);
+      });
+    }
+  });
+
+  return;
 });
 
 app.listen(process.env.PORT || 8181);
