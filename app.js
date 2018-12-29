@@ -91,9 +91,9 @@ function shufflePlaylist(nameOrId) {
   return true;
 }
 
-function playGenre(name, callback) {
-  const options = { args: [genre] };
-  osascript.file(path.join(__dirname, 'lib/playGenre.applescript'), options, function (err, data) {
+function playFilteredMusic(filter_type, name, callback) {
+  const options = { args: [filter_type, name] };
+  osascript.file(path.join(__dirname, 'lib/playFilteredMusic.applescript'), options, function (err, data) {
     callback(err, data);
   });
 
@@ -432,30 +432,19 @@ app.put('/artists/update', function (req, res) {
 });
 
 app.put('/artists/:name/play', function (req, res) {
-  metadata.getArtists(function (error, data) {
+  const artist = req.params.name;
+  refreshNowPlayingPlaylist(function (error, data) {
     if (error) {
+      console.log(error);
       res.sendStatus(500);
     } else {
-      for (var i = 0; i < data.length; i++) {
-        genre = data[i];
-        if (req.params.name == genre) {
-          refreshNowPlayingPlaylist(function (error, data) {
-            if (error) {
-              console.log(error);
-              res.sendStatus(500);
-            } else {
-              playGenre(genre, function (error, data) {
-                sendResponse(error, res);
-              });
-            }
-          });
-
-          return;
-        }
-      }
-      res.sendStatus(404);
+      playFilteredMusic('artist', artist, function (error, data) {
+        sendResponse(error, res);
+      });
     }
   });
+
+  return;
 });
 
 app.get('/genres', function (req, res) {
@@ -481,13 +470,13 @@ app.put('/genres/update', function (req, res) {
 });
 
 app.put('/genres/:name/play', function (req, res) {
-  genre = req.params.name
+  const genre = req.params.name;
   refreshNowPlayingPlaylist(function (error, data) {
     if (error) {
       console.log(error);
       res.sendStatus(500);
     } else {
-      playGenre(genre, function (error, data) {
+      playFilteredMusic('genre', genre, function (error, data) {
         sendResponse(error, res);
       });
     }
