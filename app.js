@@ -100,6 +100,11 @@ function playFilteredMusic(filter_type, name, callback) {
   return true;
 }
 
+function getVolume() {
+  itunes = Application('iTunes');
+  return {'volume': itunes.soundVolume()};
+}
+
 function setVolume(level) {
   itunes = Application('iTunes');
 
@@ -240,6 +245,17 @@ app.put('/next', function (req, res) {
   });
 });
 
+app.get('/volume', function(req, res) {
+  osa(getVolume, function (error, data) {
+    if (error) {
+      console.log(error);
+      res.sendStatus(500);
+    } else {
+      res.json(data);
+    }
+  });
+});
+
 app.put('/volume', function (req, res) {
   osa(setVolume, req.body.level, function (error, data, log) {
     if (error) {
@@ -367,29 +383,6 @@ app.get('/airplay_devices/:id', function (req, res) {
         device = data[i];
         if (req.params.id == device['id']) {
           res.json(device);
-          return;
-        }
-      }
-
-      res.sendStatus(404);
-    }
-  });
-});
-
-app.get('/airplay_devices/:id/on', function (req, res) {
-  osa(airplay.listAirPlayDevices, function (error, data, log) {
-    if (error) {
-      console.log(error)
-      res.sendStatus(500);
-    } else {
-      for (let i = 0; i < data.length; i++) {
-        device = data[i];
-        if (req.params.id == device['id']) {
-          if (device['selected'] == true) {
-            res.send((1).toString());
-          } else {
-            res.send((0).toString());
-          }
           return;
         }
       }
