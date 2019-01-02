@@ -10,11 +10,11 @@ const airplay = require('./lib/airplay');
 const metadata = require('./lib/metadata');
 const parameterize = require('parameterize');
 
-var app = express();
+const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-var logFormat = "[:date[iso]] - :remote-addr - :method :url :status :response-time ms - :res[content-length]b'";
+const logFormat = "[:date[iso]] - :remote-addr - :method :url :status :response-time ms - :res[content-length]b'";
 app.use(morgan(logFormat));
 
 function getCurrentState() {
@@ -160,7 +160,7 @@ function getPlaylistsFromItunes() {
   playlists = itunes.playlists();
   playlistNames = [];
 
-  for (var i = 0; i < playlists.length; i++) {
+  for (let i = 0; i < playlists.length; i++) {
     playlist = playlists[i];
 
     data = {};
@@ -180,7 +180,7 @@ function getPlaylists(callback) {
     if (error) {
       callback(error);
     } else {
-      for (var i = 0; i < data.length; i++) {
+      for (let i = 0; i < data.length; i++) {
         data[i]['id'] = parameterize(data[i]['name']);
       }
       callback(null, data);
@@ -312,7 +312,7 @@ app.put('/playlists/:id/play', function (req, res) {
     if (error) {
       res.sendStatus(500);
     } else {
-      for (var i = 0; i < data.length; i++) {
+      for (let i = 0; i < data.length; i++) {
         playlist = data[i];
         if (req.params.id == parameterize(playlist['name'])) {
           osa(playPlaylist, playlist['id'], function (error, data) {
@@ -333,7 +333,7 @@ app.put('/playlists/:id/shuffle', function (req, res) {
     if (error) {
       res.sendStatus(500);
     } else {
-      for (var i = 0; i < data.length; i++) {
+      for (let i = 0; i < data.length; i++) {
         playlist = data[i];
         if (req.params.id == parameterize(playlist['name'])) {
           osa(shufflePlaylist, playlist['id'], function (error, data) {
@@ -363,10 +363,33 @@ app.get('/airplay_devices/:id', function (req, res) {
     if (error) {
       res.sendStatus(500);
     } else {
-      for (var i = 0; i < data.length; i++) {
+      for (let i = 0; i < data.length; i++) {
         device = data[i];
         if (req.params.id == device['id']) {
           res.json(device);
+          return;
+        }
+      }
+
+      res.sendStatus(404);
+    }
+  });
+});
+
+app.get('/airplay_devices/:id/on', function (req, res) {
+  osa(airplay.listAirPlayDevices, function (error, data, log) {
+    if (error) {
+      console.log(error)
+      res.sendStatus(500);
+    } else {
+      for (let i = 0; i < data.length; i++) {
+        device = data[i];
+        if (req.params.id == device['id']) {
+          if (device['selected'] == true) {
+            res.send((1).toString());
+          } else {
+            res.send((0).toString());
+          }
           return;
         }
       }
